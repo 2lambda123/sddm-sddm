@@ -43,6 +43,7 @@ namespace SDDM {
         void seatRemoved(const QString &name);
 
     private Q_SLOTS:
+        void logindSecureAttentionKey(const QString &name, const QDBusObjectPath &objectPath);
         void logindSeatAdded(const QString &name, const QDBusObjectPath &objectPath);
         void logindSeatRemoved(const QString &name, const QDBusObjectPath &objectPath);
 

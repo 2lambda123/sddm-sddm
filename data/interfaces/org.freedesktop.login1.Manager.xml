@@ -185,6 +185,10 @@
    <arg type="s" direction="in"/>
    <arg type="h" direction="out"/>
   </method>
+  <signal name="SecureAttentionKey">
+   <arg type="s"/>
+   <arg type="o"/>
+  </signal>
   <signal name="SessionNew">
    <arg type="s"/>
    <arg type="o"/>

@@ -115,6 +115,7 @@ namespace SDDM {
             }
         });
 
+        QDBusConnection::systemBus().connect(Logind::serviceName(), Logind::managerPath(), Logind::managerIfaceName(), QStringLiteral("SecureAttentionKey"), this, SLOT(logindSecureAttentionKey(QString,QDBusObjectPath)));
         QDBusConnection::systemBus().connect(Logind::serviceName(), Logind::managerPath(), Logind::managerIfaceName(), QStringLiteral("SeatNew"), this, SLOT(logindSeatAdded(QString,QDBusObjectPath)));
         QDBusConnection::systemBus().connect(Logind::serviceName(), Logind::managerPath(), Logind::managerIfaceName(), QStringLiteral("SeatRemoved"), this, SLOT(logindSeatRemoved(QString,QDBusObjectPath)));
     }
@@ -170,6 +171,12 @@ namespace SDDM {
 
         // switch to greeter
         m_seats.value(name)->createDisplay(Display::defaultDisplayServerType());
+    }
+
+    void SDDM::SeatManager::logindSecureAttentionKey(const QString& name, const QDBusObjectPath& objectPath)
+    {
+        Q_UNUSED(objectPath);
+        daemonApp->seatManager()->switchToGreeter(name);
     }
 
     void SDDM::SeatManager::logindSeatAdded(const QString& name, const QDBusObjectPath& objectPath)
