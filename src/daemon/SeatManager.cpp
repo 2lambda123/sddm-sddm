@@ -27,6 +27,8 @@
 #include <QDBusPendingReply>
 #include <QDBusContext>
 
+#include <Login1Manager.h>
+#include <Login1Session.h>
 #include "LogindDBusTypes.h"
 
 namespace SDDM {
@@ -147,6 +149,24 @@ namespace SDDM {
         // check if seat exists
         if (!m_seats.contains(name))
             return;
+
+        // Switch to existing greeter session if available
+        if (Logind::isAvailable()) {
+            OrgFreedesktopLogin1ManagerInterface manager(Logind::serviceName(), Logind::managerPath(), QDBusConnection::systemBus());
+            auto reply = manager.ListSessions();
+            reply.waitForFinished();
+
+            const auto info = reply.value();
+            for(const SessionInfo &s : reply.value()) {
+                if (s.userName == QLatin1String("sddm")) {
+                    OrgFreedesktopLogin1SessionInterface session(Logind::serviceName(), s.sessionPath.path(), QDBusConnection::systemBus());
+                    if (session.service() == QLatin1String("sddm-greeter") && session.seat().name == name) {
+                        session.Activate();
+                        return;
+                    }
+                }
+            }
+        }
 
         // switch to greeter
         m_seats.value(name)->createDisplay(Display::defaultDisplayServerType());
