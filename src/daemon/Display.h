@@ -91,6 +91,9 @@ namespace SDDM {
 
         void startSocketServerAndGreeter();
         void handleAutologinFailure();
+#if HAVE_PLYMOUTH
+        bool m_plymouthIsRunning;
+#endif
 
         DisplayServerType m_displayServerType = X11DisplayServerType;
 

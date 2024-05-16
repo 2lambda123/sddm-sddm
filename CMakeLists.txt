@@ -19,6 +19,7 @@ option(ENABLE_JOURNALD "Enable logging to journald" ON)
 option(NO_SYSTEMD "Disable systemd support" OFF)
 option(USE_ELOGIND "Use elogind instead of logind" OFF)
 option(BUILD_WITH_QT6 "Build with Qt 6" OFF)
+option(WITH_PLYMOUTH "Integrate with plymouth at startup" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -168,6 +169,15 @@ else()
     set(RUNTIME_DIR_DEFAULT "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/run/sddm")
 endif()
 
+# plymouth
+if (WITH_PLYMOUTH)
+    pkg_check_modules(PLYMOUTH "ply-boot-client")
+endif()
+
+if (PLYMOUTH_FOUND)
+    add_definitions(-DHAVE_PLYMOUTH)
+endif()
+add_feature_info("plymouth" PLYMOUTH_FOUND "plymouth smooth transition support")
 
 # Set constants
 set(DATA_INSTALL_DIR            "${CMAKE_INSTALL_FULL_DATADIR}/sddm"                CACHE PATH      "System application data install directory")

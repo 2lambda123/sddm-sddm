@@ -76,11 +76,69 @@ namespace SDDM {
         return false;
     }
 
+#if HAVE_PLYMOUTH
+    bool runPlymouthCommand(QStringList &args) {
+        QProcess *process = new QProcess();
+        bool ret = false;
+
+        process->start(QStringLiteral("plymouth"), args);
+        if (!process->waitForFinished()) {
+            qWarning() << "plymouth" << args << "timed out";
+        } else if (process->exitStatus() != QProcess::ExitStatus::NormalExit) {
+            qWarning() << "plymouth" << args << "failed";
+        } else {
+            ret = !(process->exitCode());
+        }
+
+        process->deleteLater();
+        return ret;
+    }
+
+    bool plymouthIsRunning() {
+        QStringList args = { QStringLiteral("--ping") };
+        return runPlymouthCommand(args);
+    }
+
+    bool plymouthIsActive() {
+        QStringList args = { QStringLiteral("--has-active-vt") };
+        return runPlymouthCommand(args);
+    }
+
+    void plymouthDeactivate() {
+        QStringList args = { QStringLiteral("deactivate") };
+        runPlymouthCommand(args);
+    }
+
+    void quitPlymouth(bool withTransition) {
+        QStringList args;
+        args << QStringLiteral("quit");
+        if (withTransition) {
+            args << QStringLiteral("--retain-splash");
+        }
+
+        runPlymouthCommand(args);
+    }
+#endif
+
     int fetchAvailableVt() {
+#if HAVE_PLYMOUTH
+        // if we're integrating with plymouth, try to get the current VT first
+        const auto vt = VirtualTerminal::currentVt();
+
+        if (vt > -1 && plymouthIsActive()) {
+            plymouthDeactivate();
+            return vt;
+        }
+#endif // HAVE_PLYMOUTH
+
         if (!isTtyInUse(QStringLiteral("tty" STRINGIFY(SDDM_INITIAL_VT)))) {
             return SDDM_INITIAL_VT;
         }
+
+#if !HAVE_PLYMOUTH
         const auto vt = VirtualTerminal::currentVt();
+#endif
+
         if (vt > 0 && !isTtyInUse(QStringLiteral("tty%1").arg(vt))) {
             return vt;
         }
@@ -107,6 +165,9 @@ namespace SDDM {
 
     Display::Display(Seat *parent, DisplayServerType serverType)
         : QObject(parent),
+#if HAVE_PLYMOUTH
+        m_plymouthIsRunning(plymouthIsRunning()),
+#endif
         m_displayServerType(serverType),
         m_auth(new Auth(this)),
         m_seat(parent),
@@ -117,6 +178,13 @@ namespace SDDM {
         switch (m_displayServerType) {
         case X11DisplayServerType:
             if (seat()->canTTY()) {
+#if HAVE_PLYMOUTH
+                // TODO: why can't rootful X11 use fetchAvailableVt?
+                if (m_plymouthIsRunning) {
+                    quitPlymouth(false);
+                    m_plymouthIsRunning = false;
+                }
+#endif
                 m_terminalId = VirtualTerminal::setUpNewVt();
             }
             m_displayServer = new XorgDisplayServer(this);
@@ -152,6 +220,15 @@ namespace SDDM {
         connect(m_displayServer, &DisplayServer::started, this, &Display::displayServerStarted);
         connect(m_displayServer, &DisplayServer::stopped, this, &Display::stop);
 
+#if HAVE_PLYMOUTH
+        connect(m_socketServer, &SocketServer::connected, this, [this] {
+            if (plymouthIsRunning()) {
+                quitPlymouth(true);
+                m_plymouthIsRunning = false;
+            }
+        });
+#endif
+
         // connect login signal
         connect(m_socketServer, &SocketServer::login, this, &Display::login);
 
@@ -165,6 +242,13 @@ namespace SDDM {
             if (s_ttyFailures > 5) {
                 QCoreApplication::exit(23);
             }
+#if HAVE_PLYMOUTH
+            if (plymouthIsRunning()) {
+                qDebug() << "quitting plymouth early due to tty failure";
+                quitPlymouth(false);
+                m_plymouthIsRunning = false;
+            }
+#endif
             // It might be the case that we are trying a tty that has been taken over by a
             // different process. In such a case, switch back to the initial one and try again.
             VirtualTerminal::jumpToVt(SDDM_INITIAL_VT, true);
