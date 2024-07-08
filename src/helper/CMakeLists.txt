@@ -68,6 +68,7 @@ add_executable(sddm-helper-start-x11user HelperStartX11User.cpp xorguserhelper.c
                                                 ${CMAKE_SOURCE_DIR}/src/common/ConfigReader.cpp
                                                 ${CMAKE_SOURCE_DIR}/src/common/Configuration.cpp
                                                 ${CMAKE_SOURCE_DIR}/src/common/XAuth.cpp
+                                                ${CMAKE_SOURCE_DIR}/src/common/XSetup.cpp
                                                 ${CMAKE_SOURCE_DIR}/src/common/SignalHandler.cpp
                                                 )
 target_link_libraries(sddm-helper-start-x11user Qt${QT_MAJOR_VERSION}::Core

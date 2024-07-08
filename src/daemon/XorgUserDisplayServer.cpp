@@ -95,8 +95,4 @@ void XorgUserDisplayServer::finished()
 {
 }
 
-void XorgUserDisplayServer::setupDisplay()
-{
-}
-
 } // namespace SDDM

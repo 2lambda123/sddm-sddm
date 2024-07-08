@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2021 Pier Luigi Fiorini <pierluigi.fiorini@gmail.com>
+* Copyright (c) 2024 Fabian Vogt <fabian@ritter-vogt.de>
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -17,31 +17,18 @@
 * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 ***************************************************************************/
 
-#ifndef SDDM_WAYLANDDISPLAYSERVER_H
-#define SDDM_WAYLANDDISPLAYSERVER_H
+#ifndef SDDM_XSETUP_H
+#define SDDM_XSETUP_H
 
-#include "DisplayServer.h"
+class QProcessEnvironment;
 
 namespace SDDM {
 
-class WaylandDisplayServer : public DisplayServer
-{
-    Q_OBJECT
-    Q_DISABLE_COPY(WaylandDisplayServer)
-public:
-    explicit WaylandDisplayServer(Display *parent);
-    ~WaylandDisplayServer();
-
-    QString sessionType() const;
-
-    void setDisplayName(const QString &displayName);
-
-public Q_SLOTS:
-    bool start();
-    void stop();
-    void finished();
-};
+    /* Run programs to configure the X11 display.
+     * env needs to contain $DISPLAY and $XAUTHORITY.
+     */
+    void runX11Setup(const QProcessEnvironment &env);
 
 } // namespace SDDM
 
-#endif // SDDM_WAYLANDDISPLAYSERVER_H
+#endif // SDDM_XSETUP_H

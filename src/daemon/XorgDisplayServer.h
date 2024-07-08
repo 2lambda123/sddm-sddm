@@ -45,7 +45,6 @@ namespace SDDM {
         bool start();
         void stop();
         void finished();
-        void setupDisplay();
 
     private:
         XAuth m_xauth;
