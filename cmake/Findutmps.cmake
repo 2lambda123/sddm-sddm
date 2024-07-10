@@ -2,7 +2,7 @@
 # Once done this will define
 # UTMPS_FOUND - system has utmps and dependencies
 # UTMPS_INCLUDE_DIR - the utmps include dir
-# UTMPS_LIBRARIES - libutmps, libskarnet library and sysdeps libraries
+# UTMPS_LIBRARIES - libutmps
 
 if (UTMPS_INCLUDE_DIR AND UTMPS_LIBRARIES)
     # Already cached
@@ -11,20 +11,11 @@ endif (UTMPS_INCLUDE_DIR AND UTMPS_LIBRARIES)
 
 find_path(UTMPS_INCLUDE_DIR NAMES utmps/utmpx.h)
 find_library(UTMPS_LIBRARY utmps)
-find_library(SKARNET_LIBRARY skarnet)
 
-if (UTMPS_INCLUDE_DIR AND UTMPS_LIBRARY AND SKARNET_LIBRARY)
+if (UTMPS_INCLUDE_DIR AND UTMPS_LIBRARY)
     set(UTMPS_FOUND TRUE)
-    set(UTMPS_LIBRARIES ${UTMPS_LIBRARY} ${SKARNET_LIBRARY})
-    find_library(SOCKET_LIBRARY NAMES socket nsl)
-    if (SOCKET_LIBRARY)
-        set(UTMPS_LIBRARIES ${UTMPS_LIBRARIES} ${SOCKET_LIBRARY})
-    endif (SOCKET_LIBRARY)
-    find_library(SYSCLOCK_LIBRARY rt)
-    if (SYSCLOCK_LIBRARY)
-        set(UTMPS_LIBRARIES ${UTMPS_LIBRARIES} ${SYSCLOCK_LIBRARY})
-    endif (SYSCLOCK_LIBRARY)
-endif (UTMPS_INCLUDE_DIR AND UTMPS_LIBRARY AND SKARNET_LIBRARY)
+    set(UTMPS_LIBRARIES ${UTMPS_LIBRARY})
+endif (UTMPS_INCLUDE_DIR AND UTMPS_LIBRARY)
 
 if (UTMPS_FOUND)
     if (NOT UTMPS_FIND_SILENTLY)
