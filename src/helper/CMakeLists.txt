@@ -54,7 +54,7 @@ else()
 endif()
 
 if (UTMPS_FOUND)
-    target_include_directories(sddm-helper SYSTEM PUBLIC ${UTMPS_INCLUDE_DIR})
+    target_include_directories(sddm-helper SYSTEM PRIVATE ${UTMPS_INCLUDE_DIR})
     target_link_libraries(sddm-helper ${UTMPS_LIBRARIES})
 endif (UTMPS_FOUND)
 
