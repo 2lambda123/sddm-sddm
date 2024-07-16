@@ -21,7 +21,6 @@ jobs:
       matrix:
         container-image:
           - "quay.io/fedora/fedora:rawhide"
-          - "quay.io/centos/centos:stream9"
           - "registry.opensuse.org/opensuse/tumbleweed-dnf"
           - "docker.io/library/ubuntu:22.04"
           - "docker.io/library/ubuntu:23.04"
@@ -31,6 +30,9 @@ jobs:
         qt:
           - "qt5"
         include:
+          - container-image: "quay.io/centos/centos:stream9"
+            compiler: gcc
+            qt: "qt5"
           - container-image: "docker.io/library/ubuntu:23.04"
             compiler: clang
             qt: "qt6"
