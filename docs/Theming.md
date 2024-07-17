@@ -114,4 +114,10 @@ It's discouraged to use this API as all values are returned as `string` type, wh
 
 You can test your themes using `sddm-greeter`. Note that in this mode, actions like shutdown, suspend or login will have no effect.
 
-    sddm-greeter --theme /path/to/you/theme
+    sddm-greeter --test-mode --theme /path/to/you/theme
+
+If you have compiled SDDM with Qt4, you can also use it in a nested X session through Xephyr. To accomplish this use:
+
+    sddm --test-mode
+
+When using Qt5, test-mode requires at least xorg-server 1.15.0, as older releases don't support GLX in Xephyr which is required by QtQuick2.
