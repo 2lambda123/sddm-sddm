@@ -362,6 +362,8 @@ int main(int argc, char **argv)
 
     QGuiApplication app(argc, argv);
     SDDM::SignalHandler s;
+
+    app.setQuitOnLastWindowClosed(false);
     QObject::connect(&s, &SDDM::SignalHandler::sigtermReceived, &app, [] {
         QCoreApplication::instance()->exit(-1);
     });
