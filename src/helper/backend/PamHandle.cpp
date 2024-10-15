@@ -162,7 +162,7 @@ namespace SDDM {
     bool PamHandle::end(int flags) {
         if (!m_handle)
             return false;
-        m_result = pam_end(m_handle, m_result | flags);
+        m_result = pam_end(m_handle, m_silent | flags);
         if (m_result != PAM_SUCCESS) {
             qWarning() << "[PAM] end:" << pam_strerror(m_handle, m_result);
             return false;
