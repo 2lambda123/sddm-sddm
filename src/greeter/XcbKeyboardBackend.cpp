@@ -80,7 +80,7 @@ namespace SDDM {
         xcb_generic_error_t *error = nullptr;
 
         m_conn = xcb_connect(nullptr, nullptr);
-        if (m_conn == nullptr) {
+        if (xcb_connection_has_error(m_conn)) {
             qCritical() << "xcb_connect failed, keyboard extension disabled";
             d->enabled = false;
             return;
