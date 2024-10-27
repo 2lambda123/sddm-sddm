@@ -72,7 +72,6 @@ namespace SDDM {
         void login(QLocalSocket *socket,
                    const QString &user, const QString &password,
                    const Session &session);
-        bool attemptAutologin();
         void displayServerStarted();
 
     signals:
@@ -90,11 +89,10 @@ namespace SDDM {
                        const Session &session);
 
         void startSocketServerAndGreeter();
-        void handleAutologinFailure();
+        bool handleAutologinFailure();
 
         DisplayServerType m_displayServerType = X11DisplayServerType;
 
-        bool m_relogin { true };
         bool m_started { false };
 
         int m_terminalId = -1;
@@ -103,6 +101,8 @@ namespace SDDM {
         QString m_passPhrase;
         QString m_sessionName;
         QString m_reuseSessionId;
+
+        Session m_autologinSession;
 
         Auth *m_auth { nullptr };
         DisplayServer *m_displayServer { nullptr };
