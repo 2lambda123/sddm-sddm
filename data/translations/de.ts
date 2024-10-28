@@ -107,11 +107,11 @@
     </message>
     <message>
         <source>Password change aborted because maximum tries reached</source>
-        <translation>Wegen zu vieler Versuche, Passwort wechsel abgebrochen</translation>
+        <translation>Zu viele Fehlversuche, Passwortänderung abgebrochen</translation>
     </message>
     <message>
         <source>New password change round! Please input current password again!</source>
-        <translation>Bitte Passwort Eingabe wiederholen</translation>
+        <translation>Bitte neues Passwort erneut eingeben.</translation>
     </message>
 </context>
 </TS>
