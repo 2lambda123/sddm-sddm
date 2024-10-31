@@ -45,7 +45,6 @@ public Q_SLOTS:
     bool start();
     void stop();
     void finished();
-    void setupDisplay();
 };
 
 } // namespace SDDM

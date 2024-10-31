@@ -27,6 +27,7 @@
 #include "ThemeConfig.h"
 #include "ThemeMetadata.h"
 #include "Display.h"
+#include "XSetup.h"
 #include "XorgDisplayServer.h"
 #include "XorgUserDisplayServer.h"
 #include "WaylandDisplayServer.h"
@@ -128,6 +129,19 @@ namespace SDDM {
         Q_ASSERT(m_display);
         auto *displayServer = m_display->displayServer();
 
+        // Also used for greeter in test mode
+        QProcessEnvironment x11env = QProcessEnvironment::systemEnvironment();
+        if (m_display->displayServerType() == Display::X11DisplayServerType) {
+            x11env.insert(QStringLiteral("DISPLAY"), m_display->name());
+            x11env.insert(QStringLiteral("XAUTHORITY"), qobject_cast<XorgDisplayServer*>(displayServer)->authPath());
+            if (!xcursorTheme.isEmpty())
+                x11env.insert(QStringLiteral("XCURSOR_THEME"), xcursorTheme);
+            if (!xcursorSize.isEmpty())
+                x11env.insert(QStringLiteral("XCURSOR_SIZE"), xcursorSize);
+
+            // TODO: Run cursor setup again here to apply the theme's cursor theme?
+        }
+
         if (daemonApp->testing()) {
             // create process
             m_process = new QProcess(this);
@@ -145,13 +159,7 @@ namespace SDDM {
 
             if (m_display->displayServerType() == Display::X11DisplayServerType) {
                 // set process environment
-                QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-                env.insert(QStringLiteral("DISPLAY"), m_display->name());
-                env.insert(QStringLiteral("XAUTHORITY"), qobject_cast<XorgDisplayServer*>(displayServer)->authPath());
-                env.insert(QStringLiteral("XCURSOR_THEME"), xcursorTheme);
-                if (!xcursorSize.isEmpty())
-                    env.insert(QStringLiteral("XCURSOR_SIZE"), xcursorSize);
-                m_process->setProcessEnvironment(env);
+                m_process->setProcessEnvironment(x11env);
             }
             // Greeter command
             m_process->start(greeterPath, args);
@@ -205,7 +213,8 @@ namespace SDDM {
             }, sysenv, env);
 
             env.insert(QStringLiteral("PATH"), mainConfig.Users.DefaultPath.get());
-            env.insert(QStringLiteral("XCURSOR_THEME"), xcursorTheme);
+            if (!xcursorTheme.isEmpty())
+                env.insert(QStringLiteral("XCURSOR_THEME"), xcursorTheme);
             if (!xcursorSize.isEmpty())
                 env.insert(QStringLiteral("XCURSOR_SIZE"), xcursorSize);
             env.insert(QStringLiteral("XDG_SEAT"), m_display->seat()->name());

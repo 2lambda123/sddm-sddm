@@ -69,8 +69,4 @@ void WaylandDisplayServer::finished()
 {
 }
 
-void WaylandDisplayServer::setupDisplay()
-{
-}
-
 } // namespace SDDM

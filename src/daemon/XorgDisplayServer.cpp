@@ -24,6 +24,7 @@
 #include "DaemonApp.h"
 #include "Display.h"
 #include "Seat.h"
+#include "XSetup.h"
 
 #include <QDebug>
 #include <QFile>
@@ -95,8 +96,10 @@ namespace SDDM {
 
         // set process environment
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-        env.insert(QStringLiteral("XCURSOR_THEME"), mainConfig.Theme.CursorTheme.get());
-        QString xcursorSize = mainConfig.Theme.CursorSize.get();
+        const QString xcursorTheme = mainConfig.Theme.CursorTheme.get(),
+                      xcursorSize = mainConfig.Theme.CursorSize.get();
+        if (!xcursorTheme.isEmpty())
+            env.insert(QStringLiteral("XCURSOR_THEME"), xcursorTheme);
         if (!xcursorSize.isEmpty())
             env.insert(QStringLiteral("XCURSOR_SIZE"), xcursorSize);
         process->setProcessEnvironment(env);
@@ -182,10 +185,25 @@ namespace SDDM {
         }
         changeOwner(m_xauth.authPath());
 
-        emit started();
+        {
+            QProcessEnvironment env;
+            env.insert(QStringLiteral("DISPLAY"), m_display);
+            env.insert(QStringLiteral("HOME"), QStringLiteral("/"));
+            env.insert(QStringLiteral("PATH"), mainConfig.Users.DefaultPath.get());
+            env.insert(QStringLiteral("XAUTHORITY"), m_xauth.authPath());
+            env.insert(QStringLiteral("SHELL"), QStringLiteral("/bin/sh"));
+            if (!xcursorTheme.isEmpty())
+                env.insert(QStringLiteral("XCURSOR_THEME"), xcursorTheme);
+            if (!xcursorSize.isEmpty())
+                env.insert(QStringLiteral("XCURSOR_SIZE"), xcursorSize);
+
+            runX11Setup(env);
+        }
 
         // set flag
         m_started = true;
+
+        emit started();
 
         // return success
         return true;
@@ -253,76 +271,6 @@ namespace SDDM {
 
         // emit signal
         emit stopped();
-    }
-
-    void XorgDisplayServer::setupDisplay() {
-        // create cursor setup process
-        QProcess *setCursor = new QProcess();
-        // create display setup script process
-        QProcess *displayScript = new QProcess();
-
-        const QString xcursorTheme = mainConfig.Theme.CursorTheme.get(),
-                      xcursorSize = mainConfig.Theme.CursorSize.get();
-
-        // set process environment
-        QProcessEnvironment env;
-        env.insert(QStringLiteral("DISPLAY"), m_display);
-        env.insert(QStringLiteral("HOME"), QStringLiteral("/"));
-        env.insert(QStringLiteral("PATH"), mainConfig.Users.DefaultPath.get());
-        env.insert(QStringLiteral("XAUTHORITY"), m_xauth.authPath());
-        env.insert(QStringLiteral("SHELL"), QStringLiteral("/bin/sh"));
-        if (!xcursorTheme.isEmpty())
-            env.insert(QStringLiteral("XCURSOR_THEME"), xcursorTheme);
-        if (!xcursorSize.isEmpty())
-            env.insert(QStringLiteral("XCURSOR_SIZE"), xcursorSize);
-        setCursor->setProcessEnvironment(env);
-        displayScript->setProcessEnvironment(env);
-
-        qDebug() << "Setting default cursor";
-        setCursor->start(QStringLiteral("xsetroot"), { QStringLiteral("-cursor_name"), QStringLiteral("left_ptr") });
-
-        // delete setCursor on finish
-        connect(setCursor, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), setCursor, &QProcess::deleteLater);
-
-        // wait for finished
-        if (!setCursor->waitForFinished(1000)) {
-            qWarning() << "Could not setup default cursor";
-            setCursor->kill();
-        }
-
-        // Unlike libXcursor, xcb-util-cursor no longer looks at XCURSOR_*. Set the resources.
-        if (!xcursorTheme.isEmpty() || !xcursorSize.isEmpty()) {
-            QProcess xrdbProcess;
-            xrdbProcess.setProcessEnvironment(env);
-            xrdbProcess.start(QStringLiteral("xrdb"), QStringList{QStringLiteral("-nocpp"), QStringLiteral("-merge")});
-            if (!xcursorTheme.isEmpty())
-                xrdbProcess.write(QStringLiteral("Xcursor.theme: %1\n").arg(xcursorTheme).toUtf8());
-
-            if (!xcursorSize.isEmpty())
-                xrdbProcess.write(QStringLiteral("Xcursor.size: %1\n").arg(xcursorSize).toUtf8());
-
-            xrdbProcess.closeWriteChannel();
-            if (!xrdbProcess.waitForFinished(1000)) {
-                qDebug() << "Could not set Xcursor resources" << xrdbProcess.error();
-                xrdbProcess.kill();
-            }
-        }
-
-        // start display setup script
-        qDebug() << "Running display setup script " << mainConfig.X11.DisplayCommand.get();
-        QStringList displayCommand = QProcess::splitCommand(mainConfig.X11.DisplayCommand.get());
-        const QString program = displayCommand.takeFirst();
-        displayScript->start(program, displayCommand);
-
-        // delete displayScript on finish
-        connect(displayScript, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), displayScript, &QProcess::deleteLater);
-
-        // wait for finished
-        if (!displayScript->waitForFinished(30000))
-            displayScript->kill();
-
-        // reload config if needed
-        mainConfig.load();
     }
 
     void XorgDisplayServer::changeOwner(const QString &fileName) {

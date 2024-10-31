@@ -25,6 +25,8 @@
 
 #include "xorguserhelper.h"
 
+#include "XSetup.h"
+
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -211,44 +213,7 @@ void XOrgUserHelper::startDisplayCommand()
     if (!xcursorSize.isEmpty())
         env.insert(QStringLiteral("XCURSOR_SIZE"), xcursorSize);
 
-    // Set cursor
-    qInfo("Setting default cursor...");
-    QProcess *setCursor = nullptr;
-    if (startProcess(QStringLiteral("xsetroot -cursor_name left_ptr"), env, &setCursor)) {
-        if (!setCursor->waitForFinished(1000)) {
-            qWarning() << "Could not setup default cursor";
-            setCursor->kill();
-        }
-        setCursor->deleteLater();
-    }
-
-    // Unlike libXcursor, xcb-util-cursor no longer looks at XCURSOR_*. Set the resources.
-    if (!xcursorTheme.isEmpty() || !xcursorSize.isEmpty()) {
-        QProcess xrdbProcess;
-        xrdbProcess.setProcessEnvironment(env);
-        xrdbProcess.start(QStringLiteral("xrdb"), QStringList{QStringLiteral("-nocpp"), QStringLiteral("-merge")});
-        if (!xcursorTheme.isEmpty())
-            xrdbProcess.write(QStringLiteral("Xcursor.theme: %1\n").arg(xcursorTheme).toUtf8());
-
-        if (!xcursorSize.isEmpty())
-            xrdbProcess.write(QStringLiteral("Xcursor.size: %1\n").arg(xcursorSize).toUtf8());
-
-        xrdbProcess.closeWriteChannel();
-        if (!xrdbProcess.waitForFinished(1000)) {
-            qDebug() << "Could not set Xcursor resources" << xrdbProcess.error();
-            xrdbProcess.kill();
-        }
-    }
-
-    // Display setup script
-    auto cmd = mainConfig.X11.DisplayCommand.get();
-    qInfo("Running display setup script: %s", qPrintable(cmd));
-    QProcess *displayScript = nullptr;
-    if (startProcess(cmd, env, &displayScript)) {
-        if (!displayScript->waitForFinished(30000))
-            displayScript->kill();
-        displayScript->deleteLater();
-    }
+    runX11Setup(env);
 }
 
 void XOrgUserHelper::displayFinished()
